@@ -7,9 +7,11 @@
   <script async src="https://docs.opencv.org/4.x/opencv.js" onload="onOpenCvReady();"></script>
   <style>
     body { margin: 0; padding: 0; font-family: Arial; background: black; color: white; }
-    #container { position: relative; }
+    #container { position: relative; width: 100vw; height: 100vh; }
     video, canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
     canvas { pointer-events: none; } /* Overlay transparente */
+    #status { position: absolute; bottom: 10px; left: 10px; z-index: 10; }
+    #startButton { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 10; padding: 10px 20px; font-size: 18px; background: blue; color: white; border: none; cursor: pointer; }
   </style>
 </head>
 <body>
@@ -17,61 +19,70 @@
     <video id="video" autoplay playsinline></video>
     <canvas id="canvas"></canvas>
   </div>
-
-  <p id="status">Carregando OpenCV.js...</p>
+  <p id="status">Carregando OpenCV.js... Toque no botão para iniciar.</p>
+  <button id="startButton" onclick="startCamera()">Iniciar Câmera</button>
 
   <script>
     let video = document.getElementById('video');
     let canvas = document.getElementById('canvas');
     let ctx = canvas.getContext('2d');
     let status = document.getElementById('status');
+    let startButton = document.getElementById('startButton');
 
     function onOpenCvReady() {
-      status.textContent = 'OpenCV.js carregado! Iniciando câmera...';
-      startCamera();
+      status.textContent = 'OpenCV.js carregado! Clique no botão para iniciar a câmera.';
+      startButton.style.display = 'block';
     }
 
     async function startCamera() {
+      startButton.style.display = 'none'; // Esconde botão após clique
+      status.textContent = 'Tentando acessar a câmera...';
+
       try {
-        const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } }); // 'environment' = câmera traseira
+        const stream = await navigator.mediaDevices.getUserMedia({ 
+          video: { facingMode: 'environment' }  // 'environment' para câmera traseira; mude para 'user' se quiser frontal
+        });
         video.srcObject = stream;
         video.onloadedmetadata = () => {
           video.play();
           canvas.width = video.videoWidth;
           canvas.height = video.videoHeight;
-          status.textContent = 'Câmera aberta! Projetando...';
+          status.textContent = 'Câmera aberta! Projetando linhas de exemplo...';
           processFrame();
         };
       } catch (err) {
-        status.textContent = 'Erro na câmera: ' + err.message + ' (verifique permissões)';
+        status.textContent = 'Erro na câmera: ' + err.name + ' - ' + err.message + ' (verifique permissões e tente novamente)';
+        console.error('Erro detalhado:', err);
+        startButton.style.display = 'block'; // Mostra botão de novo se falhar
       }
     }
 
     function processFrame() {
       ctx.drawImage(video, 0, 0, canvas.width, canvas.height); // Copia vídeo para canvas
 
-      // Exemplo: Desenha linha branca fixa (simulando projeção)
+      // Exemplo simples: Desenha linha branca da bola branca até alvo (posições fixas para teste)
       ctx.beginPath();
-      ctx.moveTo(100, 100); // Posição bola branca
-      ctx.lineTo(500, 300); // Posição bola alvo
+      ctx.moveTo(canvas.width / 4, canvas.height / 2); // Posição simulada da bola branca
+      ctx.lineTo(canvas.width * 3 / 4, canvas.height / 2); // Posição simulada da bola alvo
       ctx.strokeStyle = 'white';
       ctx.lineWidth = 5;
       ctx.stroke();
 
-      // Trajetória amarela com rebote simples (exemplo básico)
+      // Exemplo: Trajetória amarela da bola alvo com rebotes simulados (posições fixas para teste)
       ctx.beginPath();
-      ctx.moveTo(500, 300);
-      ctx.lineTo(700, 100);
-      ctx.lineTo(700, 500);
+      ctx.moveTo(canvas.width * 3 / 4, canvas.height / 2); // Início na bola alvo
+      ctx.lineTo(canvas.width - 50, 50); // Primeiro rebote
+      ctx.lineTo(50, 50); // Segundo rebote
+      ctx.lineTo(50, canvas.height - 50); // Até caçapa simulada
       ctx.strokeStyle = 'yellow';
       ctx.lineWidth = 3;
       ctx.stroke();
 
-      requestAnimationFrame(processFrame); // Loop em tempo real
+      requestAnimationFrame(processFrame); // Loop para atualizar em tempo real
     }
 
-    // Permite acessar câmera (toque para iniciar se necessário)
-    document.addEventListener('touchstart', () => startCamera(), { once: true });
+    // Para debug: Log no console
+    console.log('Página carregada. Clique no botão para tentar câmera.');
   </script>
 </body>
 </html>
