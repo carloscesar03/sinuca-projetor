@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Projeção Sinuca - Câmera</title>
+  <script async src="https://docs.opencv.org/4.x/opencv.js" onload="onOpenCvReady();"></script>
+  <style>
+    body { margin: 0; padding: 0; font-family: Arial; background: black; color: white; }
+    #container { position: relative; }
+    video, canvas { position: absolute; top: 0; left: 0; width: 100%; height: 100%; }
+    canvas { pointer-events: none; } /* Overlay transparente */
+  </style>
+</head>
+<body>
+  <div id="container">
+    <video id="video" autoplay playsinline></video>
+    <canvas id="canvas"></canvas>
+  </div>
+
+  <p id="status">Carregando OpenCV.js...</p>
+
+  <script>
+    let video = document.getElementById('video');
+    let canvas = document.getElementById('canvas');
+    let ctx = canvas.getContext('2d');
+    let status = document.getElementById('status');
+
+    function onOpenCvReady() {
+      status.textContent = 'OpenCV.js carregado! Iniciando câmera...';
+      startCamera();
+    }
+
+    async function startCamera() {
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } }); // 'environment' = câmera traseira
+        video.srcObject = stream;
+        video.onloadedmetadata = () => {
+          video.play();
+          canvas.width = video.videoWidth;
+          canvas.height = video.videoHeight;
+          status.textContent = 'Câmera aberta! Projetando...';
+          processFrame();
+        };
+      } catch (err) {
+        status.textContent = 'Erro na câmera: ' + err.message + ' (verifique permissões)';
+      }
+    }
+
+    function processFrame() {
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height); // Copia vídeo para canvas
+
+      // Exemplo: Desenha linha branca fixa (simulando projeção)
+      ctx.beginPath();
+      ctx.moveTo(100, 100); // Posição bola branca
+      ctx.lineTo(500, 300); // Posição bola alvo
+      ctx.strokeStyle = 'white';
+      ctx.lineWidth = 5;
+      ctx.stroke();
+
+      // Trajetória amarela com rebote simples (exemplo básico)
+      ctx.beginPath();
+      ctx.moveTo(500, 300);
+      ctx.lineTo(700, 100);
+      ctx.lineTo(700, 500);
+      ctx.strokeStyle = 'yellow';
+      ctx.lineWidth = 3;
+      ctx.stroke();
+
+      requestAnimationFrame(processFrame); // Loop em tempo real
+    }
+
+    // Permite acessar câmera (toque para iniciar se necessário)
+    document.addEventListener('touchstart', () => startCamera(), { once: true });
+  </script>
+</body>
+</html>
